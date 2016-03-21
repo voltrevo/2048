@@ -1,10 +1,12 @@
 const Grid = require('./grid.js');
+const onceLater = require('./onceLater.js');
 const Tile = require('./tile.js');
 const rand = require('./rand.js');
 
 const GameManager = function GameManager({
   size,
   gameSeed,
+  moves,
   InputManager,
   Actuator,
   StorageManager,
@@ -14,7 +16,7 @@ const GameManager = function GameManager({
   this.inputManager = new InputManager;
   this.storageManager = new StorageManager;
   this.actuator = new Actuator;
-  this.moves = '';
+  this.moves = moves;
 
   this.startTiles = 2;
 
@@ -22,12 +24,16 @@ const GameManager = function GameManager({
   this.inputManager.on('restart', this.restart.bind(this));
   this.inputManager.on('keepPlaying', this.keepPlaying.bind(this));
 
+  // If actuate is called many times quickly, it'll ignore all but the last call
+  this.actuate = onceLater(this.actuate.bind(this));
+
   this.setup();
 };
 
 // Restart the game
 GameManager.prototype.restart = function restart() {
   this.actuator.continueGame(); // Clear the game won/lost message
+  this.moves = '';
   this.setup();
 };
 
@@ -52,6 +58,13 @@ GameManager.prototype.setup = function setup() {
 
   // Add the initial tiles
   this.addStartTiles();
+
+  const moves = this.moves;
+  this.moves = '';
+
+  moves.split('').forEach(moveLetter => {
+    this.move('urdl'.indexOf(moveLetter));
+  });
 
   // Update the actuator
   this.actuate();
@@ -83,6 +96,8 @@ GameManager.prototype.actuate = function actuate() {
   if (this.storageManager.getBestScore() < this.score) {
     this.storageManager.setBestScore(this.score);
   }
+
+  window.location.hash = `#${this.gameSeed},${this.moves}`;
 
   this.actuator.actuate(this.grid, {
     score: this.score,
@@ -177,7 +192,6 @@ GameManager.prototype.move = function move(direction) {
   if (moved) {
     this.addRandomTile();
     this.moves += 'urdl'[direction];
-    window.location.hash = `#${this.gameSeed},${this.moves}`;
 
     if (!this.movesAvailable()) {
       this.over = true; // Game over!
