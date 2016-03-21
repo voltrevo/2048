@@ -4,7 +4,8 @@
   "description": "A deterministic version of 2048.",
   "main": "index.js",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "start": "nakedjs src/application.js"
   },
   "repository": {
     "type": "git",
