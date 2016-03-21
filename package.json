@@ -1,0 +1,26 @@
+{
+  "name": "voltrevo-2048",
+  "version": "0.0.0",
+  "description": "A deterministic version of 2048.",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/voltrevo/2048.git"
+  },
+  "keywords": [
+    "2048",
+    "deterministic",
+    "ai",
+    "bot",
+    "game"
+  ],
+  "author": "Andrew Morris",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/voltrevo/2048/issues"
+  },
+  "homepage": "https://github.com/voltrevo/2048#readme"
+}
