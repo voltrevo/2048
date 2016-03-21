@@ -17,12 +17,14 @@ const GameManager = function GameManager({
   this.storageManager = new StorageManager;
   this.actuator = new Actuator;
   this.moves = moves;
+  this.history = [];
 
   this.startTiles = 2;
 
   this.inputManager.on('move', this.move.bind(this));
   this.inputManager.on('restart', this.restart.bind(this));
   this.inputManager.on('keepPlaying', this.keepPlaying.bind(this));
+  this.inputManager.on('undo', this.popHistory.bind(this));
 
   // If actuate is called many times quickly, it'll ignore all but the last call
   this.actuate = onceLater(this.actuate.bind(this));
@@ -34,6 +36,7 @@ const GameManager = function GameManager({
 GameManager.prototype.restart = function restart() {
   this.actuator.continueGame(); // Clear the game won/lost message
   this.moves = '';
+  this.history = [];
   this.setup();
 };
 
@@ -55,9 +58,11 @@ GameManager.prototype.setup = function setup() {
   this.over = false;
   this.won = false;
   this.keepPlaying = false;
+  this.history = [];
 
   // Add the initial tiles
   this.addStartTiles();
+  this.pushHistory();
 
   const moves = this.moves;
   this.moves = '';
@@ -192,6 +197,7 @@ GameManager.prototype.move = function move(direction) {
   if (moved) {
     this.addRandomTile();
     this.moves += 'urdl'[direction];
+    this.pushHistory();
 
     if (!this.movesAvailable()) {
       this.over = true; // Game over!
@@ -281,6 +287,37 @@ GameManager.prototype.tileMatchesAvailable = function tileMatchesAvailable() {
 
 GameManager.prototype.positionsEqual = function positionsEqual(first, second) {
   return first.x === second.x && first.y === second.y;
+};
+
+GameManager.prototype.pushHistory = function pushHistory() {
+  this.history.push(this.grid.serialize().cells);
+};
+
+GameManager.prototype.popHistory = function popHistory() {
+  // Ignore if there won't be any state left.
+  if (this.history.length <= 1) {
+    return;
+  }
+
+  const prevState = this.history.pop();
+  const currState = this.history[this.history.length - 1];
+
+  this.grid.cells = this.grid.fromState(currState);
+
+  for (let x = 0; x !== this.size; x++) {
+    for (let y = 0; y !== this.size; y++) {
+      const prevTile = prevState[x][y];
+      const currTile = currState[x][y];
+
+      if (prevTile && currTile && prevTile.value === currTile.value) {
+        this.grid.cells[x][y].savePosition();
+      }
+    }
+  }
+
+  this.moves = this.moves.slice(0, this.history.length - 1);
+
+  this.actuate();
 };
 
 module.exports = GameManager;

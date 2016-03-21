@@ -47,6 +47,7 @@ KeyboardInputManager.prototype.listen = function listen() {
     68: 1, // D
     83: 2, // S
     65: 3, // A
+    8: 4,  // backspace
   };
 
   // Respond to direction keys
@@ -58,7 +59,12 @@ KeyboardInputManager.prototype.listen = function listen() {
     if (!modifiers) {
       if (mapped !== undefined) {
         event.preventDefault();
-        self.emit('move', mapped);
+
+        if (mapped <= 3) {
+          self.emit('move', mapped);
+        } else if (mapped === 4) {
+          self.emit('undo');
+        }
       }
     }
 
