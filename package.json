@@ -22,5 +22,14 @@
   "bugs": {
     "url": "https://github.com/voltrevo/2048/issues"
   },
-  "homepage": "https://github.com/voltrevo/2048#readme"
+  "homepage": "https://github.com/voltrevo/2048#readme",
+  "dependencies": {
+    "html2jsify": "0.0.2",
+    "scssify": "^0.3.7"
+  },
+  "devDependencies": {
+    "eslint": "^2.4.0",
+    "eslint-config-airbnb": "^6.1.0",
+    "eslint-plugin-react": "^4.2.3"
+  }
 }
