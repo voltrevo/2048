@@ -4,16 +4,17 @@ const rand = require('./rand.js');
 
 const GameManager = function GameManager({
   size,
-  baseSeed,
+  gameSeed,
   InputManager,
   Actuator,
   StorageManager,
 }) {
   this.size = size; // Size of the grid
-  this.baseSeed = baseSeed;
+  this.gameSeed = gameSeed;
   this.inputManager = new InputManager;
   this.storageManager = new StorageManager;
   this.actuator = new Actuator;
+  this.moves = '';
 
   this.startTiles = 2;
 
@@ -26,7 +27,6 @@ const GameManager = function GameManager({
 
 // Restart the game
 GameManager.prototype.restart = function restart() {
-  this.storageManager.clearGameState();
   this.actuator.continueGame(); // Clear the game won/lost message
   this.setup();
 };
@@ -44,30 +44,14 @@ GameManager.prototype.isGameTerminated = function isGameTerminated() {
 
 // Set up the game
 GameManager.prototype.setup = function setup() {
-  const previousState = this.storageManager.getGameState();
+  this.grid = new Grid(this.size);
+  this.score = 0;
+  this.over = false;
+  this.won = false;
+  this.keepPlaying = false;
 
-  // Reload the game from a previous game if present
-  if (previousState) {
-    // Reload grid
-    this.grid = new Grid(
-      previousState.grid.size,
-      previousState.grid.cells
-    );
-
-    this.score = previousState.score;
-    this.over = previousState.over;
-    this.won = previousState.won;
-    this.keepPlaying = previousState.keepPlaying;
-  } else {
-    this.grid = new Grid(this.size);
-    this.score = 0;
-    this.over = false;
-    this.won = false;
-    this.keepPlaying = false;
-
-    // Add the initial tiles
-    this.addStartTiles();
-  }
+  // Add the initial tiles
+  this.addStartTiles();
 
   // Update the actuator
   this.actuate();
@@ -85,9 +69,9 @@ GameManager.prototype.addRandomTile = function addRandomTile() {
   if (this.grid.cellsAvailable()) {
     const gridSeed = this.grid.seedString();
 
-    const value = rand(`${gridSeed}:value`) < 0.9 ? 2 : 4;
+    const value = rand(`${this.gameSeed}:${gridSeed}:value`) < 0.9 ? 2 : 4;
 
-    const indexRand = rand(`${gridSeed}:index`);
+    const indexRand = rand(`${this.gameSeed}:${gridSeed}:index`);
     const tile = new Tile(this.grid.randomAvailableCell(indexRand), value);
 
     this.grid.insertTile(tile);
@@ -98,13 +82,6 @@ GameManager.prototype.addRandomTile = function addRandomTile() {
 GameManager.prototype.actuate = function actuate() {
   if (this.storageManager.getBestScore() < this.score) {
     this.storageManager.setBestScore(this.score);
-  }
-
-  // Clear the state when the game is over (game over only, not win)
-  if (this.over) {
-    this.storageManager.clearGameState();
-  } else {
-    this.storageManager.setGameState(this.serialize());
   }
 
   this.actuator.actuate(this.grid, {
@@ -199,6 +176,8 @@ GameManager.prototype.move = function move(direction) {
 
   if (moved) {
     this.addRandomTile();
+    this.moves += 'urdl'[direction];
+    window.location.hash = `#${this.gameSeed},${this.moves}`;
 
     if (!this.movesAvailable()) {
       this.over = true; // Game over!
