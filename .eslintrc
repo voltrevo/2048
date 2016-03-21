@@ -1,0 +1,9 @@
+{
+  "extends": "airbnb",
+  "rules": {
+    "strict": 0,
+    "new-cap": 0,
+    "no-loop-func": 0,
+    "no-constant-condition": 0
+  }
+}
