@@ -26,6 +26,8 @@ const GameManager = function GameManager({
   this.inputManager.on('keepPlaying', this.keepPlaying.bind(this));
   this.inputManager.on('undo', this.popHistory.bind(this));
 
+  window.addEventListener('hashchange', this.updateFromHash.bind(this));
+
   // If actuate is called many times quickly, it'll ignore all but the last call
   this.actuate = onceLater(this.actuate.bind(this));
 
@@ -318,6 +320,17 @@ GameManager.prototype.popHistory = function popHistory() {
   this.moves = this.moves.slice(0, this.history.length - 1);
 
   this.actuate();
+};
+
+GameManager.prototype.updateFromHash = function updateFromHash() {
+  const [gameSeed, moves] = window.location.hash.slice(1).split(',');
+
+  if (gameSeed !== this.gameSeed || moves !== this.moves) {
+    this.gameSeed = gameSeed;
+    this.moves = moves;
+
+    this.setup();
+  }
 };
 
 module.exports = GameManager;
