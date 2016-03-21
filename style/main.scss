@@ -1,5 +1,4 @@
 @import "helpers";
-@import "fonts/clear-sans.css";
 
 $field-width: 500px;
 $grid-spacing: 15px;
@@ -27,7 +26,7 @@ html, body {
 
   background: #faf8ef;
   color: $text-color;
-  font-family: "Clear Sans", "Helvetica Neue", Arial, sans-serif;
+  font-family: "Helvetica Neue", Arial, sans-serif;
   font-size: 18px;
 }
 
