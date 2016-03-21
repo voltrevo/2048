@@ -1,4 +1,4 @@
-@import "helpers";
+@import "./helpers.scss";
 
 $field-width: 500px;
 $grid-spacing: 15px;
@@ -46,7 +46,7 @@ h1.title {
   float: left;
 }
 
-@include keyframes(move-up) {
+@keyframes move-up {
   0% {
     top: 25px;
     opacity: 1;
@@ -144,7 +144,7 @@ hr {
   margin: 0 auto;
 }
 
-@include keyframes(fade-in) {
+@keyframes fade-in {
   0% {
     opacity: 0;
   }
@@ -413,7 +413,7 @@ hr {
   }
 }
 
-@include keyframes(appear) {
+@keyframes appear {
   0% {
     opacity: 0;
     @include transform(scale(0));
@@ -430,7 +430,7 @@ hr {
   @include animation-fill-mode(backwards);
 }
 
-@include keyframes(pop) {
+@keyframes pop {
   0% {
     @include transform(scale(0));
   }
