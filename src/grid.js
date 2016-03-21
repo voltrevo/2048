@@ -36,10 +36,10 @@ Grid.prototype.fromState = function fromState(state) {
 };
 
 // Find the first available random position
-Grid.prototype.randomAvailableCell = function randomAvailableCell() {
+Grid.prototype.randomAvailableCell = function randomAvailableCell(randVal) {
   const cells = this.availableCells();
 
-  return cells[Math.floor(Math.random() * cells.length)];
+  return cells[Math.floor(randVal * cells.length)];
 };
 
 Grid.prototype.availableCells = function availableCells() {
@@ -114,6 +114,14 @@ Grid.prototype.serialize = function serialize() {
     size: this.size,
     cells: cellState,
   };
+};
+
+Grid.prototype.seedString = function seedString() {
+  return this.cells.map(col =>
+    col.map(tile =>
+      tile ? tile.value : 0
+    ).join(',')
+  ).join(';');
 };
 
 module.exports = Grid;

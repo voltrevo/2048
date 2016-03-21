@@ -1,8 +1,16 @@
 const Grid = require('./grid.js');
 const Tile = require('./tile.js');
+const rand = require('./rand.js');
 
-const GameManager = function GameManager(size, InputManager, Actuator, StorageManager) {
+const GameManager = function GameManager({
+  size,
+  baseSeed,
+  InputManager,
+  Actuator,
+  StorageManager,
+}) {
   this.size = size; // Size of the grid
+  this.baseSeed = baseSeed;
   this.inputManager = new InputManager;
   this.storageManager = new StorageManager;
   this.actuator = new Actuator;
@@ -75,8 +83,12 @@ GameManager.prototype.addStartTiles = function addStartTiles() {
 // Adds a tile in a random position
 GameManager.prototype.addRandomTile = function addRandomTile() {
   if (this.grid.cellsAvailable()) {
-    const value = Math.random() < 0.9 ? 2 : 4;
-    const tile = new Tile(this.grid.randomAvailableCell(), value);
+    const gridSeed = this.grid.seedString();
+
+    const value = rand(`${gridSeed}:value`) < 0.9 ? 2 : 4;
+
+    const indexRand = rand(`${gridSeed}:index`);
+    const tile = new Tile(this.grid.randomAvailableCell(indexRand), value);
 
     this.grid.insertTile(tile);
   }

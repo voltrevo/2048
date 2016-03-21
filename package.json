@@ -33,6 +33,7 @@
   "homepage": "https://github.com/voltrevo/2048#readme",
   "dependencies": {
     "html2jsify": "0.0.2",
+    "random-seed": "^0.3.0",
     "scssify": "^0.3.7"
   },
   "devDependencies": {

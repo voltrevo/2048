@@ -10,5 +10,11 @@ const HTMLActuator = require('./html_actuator.js');
 // Wait till the browser is ready to render the game (avoids glitches)
 window.requestAnimationFrame(() => {
   document.body.appendChild(Container());
-  window.GameManager = new GameManager(4, KeyboardInputManager, HTMLActuator, LocalStorageManager);
+  window.GameManager = new GameManager({
+    size: 4,
+    baseSeed: '',
+    InputManager: KeyboardInputManager,
+    Actuator: HTMLActuator,
+    StorageManager: LocalStorageManager,
+  });
 });
