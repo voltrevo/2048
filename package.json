@@ -10,6 +10,13 @@
     "type": "git",
     "url": "git+https://github.com/voltrevo/2048.git"
   },
+  "browserify": {
+    "transform": [
+      "babelify",
+      "html2jsify",
+      "scssify"
+    ]
+  },
   "keywords": [
     "2048",
     "deterministic",
@@ -28,8 +35,10 @@
     "scssify": "^0.3.7"
   },
   "devDependencies": {
+    "babelify": "^7.2.0",
     "eslint": "^2.4.0",
     "eslint-config-airbnb": "^6.1.0",
-    "eslint-plugin-react": "^4.2.3"
+    "eslint-plugin-react": "^4.2.3",
+    "nakedjs": "^0.1.0"
   }
 }
