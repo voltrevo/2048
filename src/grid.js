@@ -116,12 +116,4 @@ Grid.prototype.serialize = function serialize() {
   };
 };
 
-Grid.prototype.seedString = function seedString() {
-  return this.cells.map(col =>
-    col.map(tile =>
-      tile ? tile.value : 0
-    ).join(',')
-  ).join(';');
-};
-
 module.exports = Grid;

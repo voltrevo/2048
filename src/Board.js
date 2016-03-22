@@ -1,7 +1,9 @@
 const assert = require('assert');
 
+const cellsToSeed = require('./cellsToSeed.js');
 const rand = require('./rand.js');
 const range = require('./range.js');
+const stringToSeed = require('./stringToSeed.js');
 
 const copyCells = (cells) => (
   cells.map(row => row.map(cell => cell))
@@ -37,8 +39,6 @@ module.exports = (arg) => {
 
   board.getCells = () => copyCells(cells);
 
-  const cellString = () => cells.map(row => row.join(',')).join(';');
-
   const countEmptyCells = () => {
     let count = 0;
 
@@ -60,11 +60,8 @@ module.exports = (arg) => {
       return false;
     }
 
-    const cellSeed = cellString();
-
-    // Extract both random decisions from the same rand value. It would be simpler to call rand
-    // twice but it is definitely a performance bottleneck for us.
-    let randVal = rand(`${gameSeed}:${cellSeed}`);
+    // Extract both random decisions from the same rand value.
+    let randVal = rand(stringToSeed(gameSeed) + cellsToSeed(cells));
     randVal *= 10;
 
     const blockVal = (randVal < 1 ? 4 : 2);

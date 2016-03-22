@@ -1,9 +1,11 @@
 const Board = require('./Board.js');
+const cellsToSeed = require('./cellsToSeed.js');
 const Grid = require('./grid.js');
 const onceLater = require('./onceLater.js');
 const Tile = require('./tile.js');
 const trivialGetSuggestion = require('./trivialGetSuggestion.js');
 const rand = require('./rand.js');
+const stringToSeed = require('./stringToSeed.js');
 
 const GameManager = function GameManager({
   size,
@@ -100,11 +102,8 @@ GameManager.prototype.addStartTiles = function addStartTiles() {
 // Adds a tile in a random position
 GameManager.prototype.addRandomTile = function addRandomTile() {
   if (this.grid.cellsAvailable()) {
-    const gridSeed = this.grid.seedString();
-
-    // Extract both random decisions from the same rand value. It would be simpler to call rand
-    // twice but it is definitely a performance bottleneck for us.
-    let randVal = rand(`${this.gameSeed}:${gridSeed}`);
+    // Extract both random decisions from the same rand value.
+    let randVal = rand(stringToSeed(this.gameSeed) + this.getStateSeed());
     randVal *= 10;
 
     const value = (randVal < 1 ? 4 : 2);
@@ -390,10 +389,14 @@ GameManager.prototype.updateFromHash = function updateFromHash() {
   }
 };
 
+GameManager.prototype.getPlainCells = function getPlainCells() {
+  return this.grid.cells.map(col => col.map(tile => tile ? tile.value : 0));
+};
+
 GameManager.prototype.createBoard = function createBoard() {
   return Board({
     gameSeed: this.gameSeed,
-    inputCells: this.grid.cells.map(col => col.map(tile => tile ? tile.value : 0)),
+    inputCells: this.getPlainCells(),
   });
 };
 
@@ -405,6 +408,10 @@ GameManager.prototype.acceptSuggestion = function acceptSuggestion() {
   const suggestion = this.getSuggestion(this.createBoard());
 
   this.move(['up', 'right', 'down', 'left'].indexOf(suggestion));
+};
+
+GameManager.prototype.getStateSeed = function getStateSeed() {
+  return cellsToSeed(this.getPlainCells());
 };
 
 module.exports = GameManager;
