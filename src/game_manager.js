@@ -53,6 +53,16 @@ GameManager.prototype.isGameTerminated = function isGameTerminated() {
   return this.over || (this.won && !this.keepPlaying);
 };
 
+GameManager.prototype.replaySequence = function replaySequence(moves) {
+  moves.split('').forEach(moveLetter => {
+    if (this.won) {
+      this.keepPlaying = true;
+    }
+
+    this.move('urdl'.indexOf(moveLetter));
+  });
+};
+
 // Set up the game
 GameManager.prototype.setup = function setup() {
   this.grid = new Grid(this.size);
@@ -69,13 +79,7 @@ GameManager.prototype.setup = function setup() {
   const moves = this.moves;
   this.moves = '';
 
-  moves.split('').forEach(moveLetter => {
-    if (this.won) {
-      this.keepPlaying = true;
-    }
-
-    this.move('urdl'.indexOf(moveLetter));
-  });
+  this.replaySequence(moves);
 
   // Update the actuator
   this.actuate();
@@ -295,8 +299,32 @@ GameManager.prototype.positionsEqual = function positionsEqual(first, second) {
   return first.x === second.x && first.y === second.y;
 };
 
+GameManager.prototype.getState = function getState() {
+  return {
+    cells: this.grid.serialize().cells,
+    score: this.score,
+  };
+};
+
 GameManager.prototype.pushHistory = function pushHistory() {
-  this.history.push(this.grid.serialize().cells);
+  this.history.push(this.getState());
+};
+
+GameManager.prototype.stateTransition = function stateTransition(prevState, currState) {
+  this.grid.cells = this.grid.fromState(currState.cells);
+
+  for (let x = 0; x !== this.size; x++) {
+    for (let y = 0; y !== this.size; y++) {
+      const prevTile = prevState.cells[x][y];
+      const currTile = currState.cells[x][y];
+
+      if (prevTile && currTile && prevTile.value === currTile.value) {
+        this.grid.cells[x][y].savePosition();
+      }
+    }
+  }
+
+  this.score = currState.score;
 };
 
 GameManager.prototype.popHistory = function popHistory() {
@@ -308,32 +336,45 @@ GameManager.prototype.popHistory = function popHistory() {
   const prevState = this.history.pop();
   const currState = this.history[this.history.length - 1];
 
-  this.grid.cells = this.grid.fromState(currState);
-
-  for (let x = 0; x !== this.size; x++) {
-    for (let y = 0; y !== this.size; y++) {
-      const prevTile = prevState[x][y];
-      const currTile = currState[x][y];
-
-      if (prevTile && currTile && prevTile.value === currTile.value) {
-        this.grid.cells[x][y].savePosition();
-      }
-    }
-  }
+  this.stateTransition(prevState, currState);
 
   this.moves = this.moves.slice(0, this.history.length - 1);
 
   this.actuate();
 };
 
+const longestCommonPrefix = (str1, str2) => {
+  let i = 0;
+  const minLen = Math.min(str1.length, str2.length);
+
+  while (i < minLen && str1[i] === str2[i]) {
+    i++;
+  }
+
+  return str1.slice(0, i);
+};
+
 GameManager.prototype.updateFromHash = function updateFromHash() {
   const [gameSeed, moves] = window.location.hash.slice(1).split(',');
 
-  if (gameSeed !== this.gameSeed || moves !== this.moves) {
+  if (gameSeed !== this.gameSeed) {
     this.gameSeed = gameSeed;
     this.moves = moves;
 
     this.setup();
+  } else if (moves !== this.moves) {
+    const commonMoves = longestCommonPrefix(moves, this.moves);
+    const extraMoves = moves.slice(commonMoves.length);
+
+    const prevState = this.getState();
+    this.history = this.history.slice(0, commonMoves.length + 1);
+    this.replaySequence(extraMoves);
+
+    const currState = this.history[this.history.length - 1];
+    this.stateTransition(prevState, currState);
+    this.moves = moves;
+
+    this.actuate();
   }
 };
 
