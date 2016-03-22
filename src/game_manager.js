@@ -1,6 +1,8 @@
+const Board = require('./Board.js');
 const Grid = require('./grid.js');
 const onceLater = require('./onceLater.js');
 const Tile = require('./tile.js');
+const trivialGetSuggestion = require('./trivialGetSuggestion.js');
 const rand = require('./rand.js');
 
 const GameManager = function GameManager({
@@ -10,12 +12,14 @@ const GameManager = function GameManager({
   InputManager,
   Actuator,
   StorageManager,
+  getSuggestion = trivialGetSuggestion,
 }) {
   this.size = size; // Size of the grid
   this.gameSeed = gameSeed;
   this.inputManager = new InputManager;
   this.storageManager = new StorageManager;
   this.actuator = new Actuator;
+  this.getSuggestion = getSuggestion;
   this.moves = moves;
   this.history = [];
 
@@ -25,6 +29,7 @@ const GameManager = function GameManager({
   this.inputManager.on('restart', this.restart.bind(this));
   this.inputManager.on('keepPlaying', this.keepPlaying.bind(this));
   this.inputManager.on('undo', this.popHistory.bind(this));
+  this.inputManager.on('acceptSuggestion', this.acceptSuggestion.bind(this));
 
   window.addEventListener('hashchange', this.updateFromHash.bind(this));
 
@@ -377,6 +382,23 @@ GameManager.prototype.updateFromHash = function updateFromHash() {
 
     this.actuate();
   }
+};
+
+GameManager.prototype.createBoard = function createBoard() {
+  return Board({
+    gameSeed: this.gameSeed,
+    inputCells: this.grid.cells.map(col => col.map(tile => tile ? tile.value : 0)),
+  });
+};
+
+GameManager.prototype.acceptSuggestion = function acceptSuggestion() {
+  if (!this.getSuggestion) {
+    return;
+  }
+
+  const suggestion = this.getSuggestion(this.createBoard());
+
+  this.move(['up', 'right', 'down', 'left'].indexOf(suggestion));
 };
 
 module.exports = GameManager;

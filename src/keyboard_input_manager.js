@@ -35,19 +35,20 @@ KeyboardInputManager.prototype.listen = function listen() {
   const self = this;
 
   const map = {
-    38: 0, // Up
-    39: 1, // Right
-    40: 2, // Down
-    37: 3, // Left
-    75: 0, // Vim up
-    76: 1, // Vim right
-    74: 2, // Vim down
-    72: 3, // Vim left
-    87: 0, // W
-    68: 1, // D
-    83: 2, // S
-    65: 3, // A
-    8: 4,  // backspace
+    38: 0,  // Up
+    39: 1,  // Right
+    40: 2,  // Down
+    37: 3,  // Left
+    75: 0,  // Vim up
+    76: 1,  // Vim right
+    74: 2,  // Vim down
+    72: 3,  // Vim left
+    87: 0,  // W
+    68: 1,  // D
+    83: 2,  // S
+    65: 3,  // A
+    8: 4,   // backspace
+    190: 5, // dot: accept suggestion
   };
 
   // Respond to direction keys
@@ -64,6 +65,8 @@ KeyboardInputManager.prototype.listen = function listen() {
           self.emit('move', mapped);
         } else if (mapped === 4) {
           self.emit('undo');
+        } else if (mapped === 5) {
+          self.emit('acceptSuggestion');
         }
       }
     }
