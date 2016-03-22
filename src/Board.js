@@ -65,7 +65,7 @@ module.exports = (arg) => {
     const cellSeed = cellString();
 
     const blockIndex = Math.floor(emptyCount * rand(`${gameSeed}:${cellSeed}:index`));
-    const blockVal = (rand(`${gameSeed}:${cellSeed}:value`) < 0.1 ? 4 : 2);
+    const blockVal = (rand(`${gameSeed}:${cellSeed}:value`) < 0.9 ? 2 : 4);
 
     let emptySoFar = 0;
 
