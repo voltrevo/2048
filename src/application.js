@@ -9,10 +9,13 @@ const HTMLActuator = require('./html_actuator.js');
 
 const [gameSeed, moves] = window.location.hash.slice(1).split(',');
 
+window.Board = require('./Board.js');
+
 // Wait till the browser is ready to render the game (avoids glitches)
 window.requestAnimationFrame(() => {
   document.body.appendChild(Container());
-  window.GameManager = new GameManager({
+
+  window.gameManager = new GameManager({
     size: 4,
     gameSeed: gameSeed || '',
     moves: moves || '',
