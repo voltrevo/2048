@@ -12,6 +12,7 @@ HTMLActuator.prototype.actuate = function actuate(grid, metadata) {
 
   window.requestAnimationFrame(() => {
     self.clearContainer(self.tileContainer);
+    self.clearMessage();
 
     grid.cells.forEach((column) => {
       column.forEach((cell) => {

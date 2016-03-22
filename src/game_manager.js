@@ -325,6 +325,7 @@ GameManager.prototype.stateTransition = function stateTransition(prevState, curr
   }
 
   this.score = currState.score;
+  this.over = !this.movesAvailable();
 };
 
 GameManager.prototype.popHistory = function popHistory() {
