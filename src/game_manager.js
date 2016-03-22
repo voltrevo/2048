@@ -102,10 +102,15 @@ GameManager.prototype.addRandomTile = function addRandomTile() {
   if (this.grid.cellsAvailable()) {
     const gridSeed = this.grid.seedString();
 
-    const value = rand(`${this.gameSeed}:${gridSeed}:value`) < 0.9 ? 2 : 4;
+    // Extract both random decisions from the same rand value. It would be simpler to call rand
+    // twice but it is definitely a performance bottleneck for us.
+    let randVal = rand(`${this.gameSeed}:${gridSeed}`);
+    randVal *= 10;
 
-    const indexRand = rand(`${this.gameSeed}:${gridSeed}:index`);
-    const tile = new Tile(this.grid.randomAvailableCell(indexRand), value);
+    const value = (randVal < 1 ? 4 : 2);
+    randVal = randVal - Math.floor(randVal);
+
+    const tile = new Tile(this.grid.randomAvailableCell(randVal), value);
 
     this.grid.insertTile(tile);
   }

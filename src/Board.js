@@ -62,8 +62,15 @@ module.exports = (arg) => {
 
     const cellSeed = cellString();
 
-    const blockIndex = Math.floor(emptyCount * rand(`${gameSeed}:${cellSeed}:index`));
-    const blockVal = (rand(`${gameSeed}:${cellSeed}:value`) < 0.9 ? 2 : 4);
+    // Extract both random decisions from the same rand value. It would be simpler to call rand
+    // twice but it is definitely a performance bottleneck for us.
+    let randVal = rand(`${gameSeed}:${cellSeed}`);
+    randVal *= 10;
+
+    const blockVal = (randVal < 1 ? 4 : 2);
+    randVal = randVal - Math.floor(randVal);
+
+    const blockIndex = Math.floor(emptyCount * randVal);
 
     let emptySoFar = 0;
 
