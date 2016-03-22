@@ -70,6 +70,10 @@ GameManager.prototype.setup = function setup() {
   this.moves = '';
 
   moves.split('').forEach(moveLetter => {
+    if (this.won) {
+      this.keepPlaying = true;
+    }
+
     this.move('urdl'.indexOf(moveLetter));
   });
 
