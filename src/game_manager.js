@@ -125,6 +125,7 @@ GameManager.prototype.actuate = function actuate() {
     won: this.won,
     bestScore: this.storageManager.getBestScore(),
     terminated: this.isGameTerminated(),
+    suggestion: this.getSuggestion ? this.getSuggestion(this.createBoard()) : '',
   });
 };
 

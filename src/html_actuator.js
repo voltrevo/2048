@@ -3,6 +3,7 @@ function HTMLActuator() {
   this.scoreContainer = document.querySelector('.score-container');
   this.bestContainer = document.querySelector('.best-container');
   this.messageContainer = document.querySelector('.game-message');
+  this.suggestionContainer = document.querySelector('#suggestion-text');
 
   this.score = 0;
 }
@@ -32,6 +33,8 @@ HTMLActuator.prototype.actuate = function actuate(grid, metadata) {
         self.message(true); // You win!
       }
     }
+
+    self.updateSuggestion(metadata.suggestion);
   });
 };
 
@@ -136,6 +139,10 @@ HTMLActuator.prototype.clearMessage = function clearMessage() {
   // IE only takes one value to remove at a time.
   this.messageContainer.classList.remove('game-won');
   this.messageContainer.classList.remove('game-over');
+};
+
+HTMLActuator.prototype.updateSuggestion = function updateSuggestion(suggestion) {
+  this.suggestionContainer.textContent = suggestion;
 };
 
 module.exports = HTMLActuator;
