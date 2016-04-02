@@ -1,3 +1,5 @@
+'use strict';
+
 const assert = require('assert');
 
 const cellsToSeed = require('./cellsToSeed.js');
@@ -25,13 +27,12 @@ const padNum = (n, len) => {
   return repeatStr(' ', len - nStr.length) + nStr;
 };
 
-module.exports = (arg) => {
-  // This is a workaround for browserify's parser not fully supporting this type of argument
+module.exports = (argInput) => {
+  // This is a workaround for browserify's parser and nodejs not supporting this type of argument
   // destructuring: ({ x = 1, y = 2 } = {}) => x + y;
-  const {
-    gameSeed = '',
-    inputCells = range(4).map(() => [0, 0, 0, 0]),
-  } = arg || {};
+  const arg = argInput || {};
+  const gameSeed = arg.gameSeed || '';
+  const inputCells = arg.inputCells || range(4).map(() => [0, 0, 0, 0]);
 
   const board = {};
 
@@ -162,7 +163,7 @@ module.exports = (arg) => {
   );
 
   board.prettyString = () => {
-    const maxLen = ([].concat(...cells)
+    const maxLen = (Array.prototype.concat.apply([], cells)
       .map(n => String(n).length)
       .reduce((a, b) => Math.max(a, b))
     );

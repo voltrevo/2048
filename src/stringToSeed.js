@@ -1,3 +1,5 @@
+'use strict';
+
 const sqrt2 = Math.sqrt(2);
 
 module.exports = (str) => {

@@ -1,3 +1,4 @@
+const AbbreviationWarning = require('./html/AbbreviationWarning.html');
 const Board = require('./Board.js');
 const cellsToSeed = require('./cellsToSeed.js');
 const Grid = require('./grid.js');
@@ -33,6 +34,12 @@ const GameManager = function GameManager({
   this.inputManager.on('keepPlaying', this.keepPlaying.bind(this));
   this.inputManager.on('undo', this.popHistory.bind(this));
   this.inputManager.on('acceptSuggestion', this.acceptSuggestion.bind(this));
+
+  this.moveStore.events.once('abbreviation', () => {
+    document.querySelector('#dynamic-info-box').appendChild(
+      AbbreviationWarning()
+    );
+  });
 
   window.addEventListener('hashchange', this.updateFromHash.bind(this));
 

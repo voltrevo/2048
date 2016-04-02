@@ -1,3 +1,5 @@
+'use strict';
+
 const sqrt2 = Math.sqrt(2);
 const sqrt3 = Math.sqrt(3);
 
