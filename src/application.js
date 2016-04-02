@@ -6,8 +6,9 @@ const GameManager = require('./game_manager.js');
 const KeyboardInputManager = require('./keyboard_input_manager.js');
 const LocalStorageManager = require('./local_storage_manager.js');
 const HTMLActuator = require('./html_actuator.js');
+const MoveStore = require('./MoveStore.js');
 
-const [gameSeed, moves] = window.location.hash.slice(1).split(',');
+const [gameSeed = '', moves = ''] = window.location.hash.slice(1).split(',');
 
 window.Board = require('./Board.js');
 
@@ -17,8 +18,8 @@ window.requestAnimationFrame(() => {
 
   window.gameManager = new GameManager({
     size: 4,
-    gameSeed: gameSeed || '',
-    moves: moves || '',
+    gameSeed,
+    moveStore: MoveStore(moves),
     InputManager: KeyboardInputManager,
     Actuator: HTMLActuator,
     StorageManager: LocalStorageManager,

@@ -8,10 +8,14 @@ const localObjects = {
   '': '',
 };
 
-const fetchText = memoize((url) => (
-  url in localObjects ?
+const fetchMoves = memoize((url) => (
+  (url in localObjects ?
     Promise.resolve(localObjects[url]) :
-    fetch(`https://crossorigin.me/${url}`).then(res => res.text())
+    (fetch(`https://crossorigin.me/${url}`)
+      .then(res => res.text())
+      .then(text => text.replace(/[^lrud]/g, ''))
+    )
+  )
 ));
 
 const MoveStore = (moves) => {
@@ -37,7 +41,7 @@ const MoveStore = (moves) => {
 
     assert(data.remote === '' || urlRegex.test(data.remote));
     assert(typeof data.shortenRemote === 'number');
-    assert(data.shortenRemote === data.shortenRemote); // ie not NaN
+    assert(data.shortenRemote >= 0);
     assert(/[lrud]*/.test(data.append));
   };
 
@@ -60,12 +64,13 @@ const MoveStore = (moves) => {
     data.append = data.append.substring(0, data.append.length - appendShortenLen);
 
     data.shortenRemote += (n - appendShortenLen);
+    data.shortenRemote = Math.max(0, data.shortenRemote);
   };
 
   moveStore.append = (str) => data.append += str;
 
   moveStore.resolve = () => (
-    fetchText(data.remote).then(remoteText => (
+    fetchMoves(data.remote).then(remoteText => (
       remoteText.substring(0, remoteText.length - data.shortenRemote)
     )).then(shortenedRemoteText =>
       shortenedRemoteText + data.append

@@ -1,6 +1,7 @@
 const Board = require('./Board.js');
 const cellsToSeed = require('./cellsToSeed.js');
 const Grid = require('./grid.js');
+const MoveStore = require('./MoveStore.js');
 const onceLater = require('./onceLater.js');
 const Tile = require('./tile.js');
 const trivialGetSuggestion = require('./trivialGetSuggestion.js');
@@ -10,7 +11,7 @@ const stringToSeed = require('./stringToSeed.js');
 const GameManager = function GameManager({
   size,
   gameSeed,
-  moves,
+  moveStore,
   InputManager,
   Actuator,
   StorageManager,
@@ -22,7 +23,7 @@ const GameManager = function GameManager({
   this.storageManager = new StorageManager;
   this.actuator = new Actuator;
   this.getSuggestion = getSuggestion;
-  this.moves = moves;
+  this.moveStore = moveStore;
   this.history = [];
 
   this.startTiles = 2;
@@ -44,7 +45,7 @@ const GameManager = function GameManager({
 // Restart the game
 GameManager.prototype.restart = function restart() {
   this.actuator.continueGame(); // Clear the game won/lost message
-  this.moves = '';
+  this.moveStore.set('');
   this.history = [];
   this.setup();
 };
@@ -60,13 +61,13 @@ GameManager.prototype.isGameTerminated = function isGameTerminated() {
   return this.over || (this.won && !this.keepPlaying);
 };
 
-GameManager.prototype.replaySequence = function replaySequence(moves) {
+GameManager.prototype.replaySequence = function replaySequence(moves, record = true) {
   moves.split('').forEach(moveLetter => {
     if (this.won) {
       this.keepPlaying = true;
     }
 
-    this.move('urdl'.indexOf(moveLetter));
+    this.move('urdl'.indexOf(moveLetter), record);
   });
 };
 
@@ -83,13 +84,12 @@ GameManager.prototype.setup = function setup() {
   this.addStartTiles();
   this.pushHistory();
 
-  const moves = this.moves;
-  this.moves = '';
+  this.moveStore.resolve().then(moves => {
+    this.replaySequence(moves, false);
 
-  this.replaySequence(moves);
-
-  // Update the actuator
-  this.actuate();
+    // Update the actuator
+    this.actuate();
+  });
 };
 
 // Set up the initial tiles to start the game with
@@ -121,7 +121,7 @@ GameManager.prototype.actuate = function actuate() {
     this.storageManager.setBestScore(this.score);
   }
 
-  window.location.hash = `#${this.gameSeed},${this.moves}`;
+  window.location.hash = `#${this.gameSeed},${this.moveStore.get()}`;
 
   this.actuator.actuate(this.grid, {
     score: this.score,
@@ -164,7 +164,7 @@ GameManager.prototype.moveTile = function moveTile(tile, cell) {
 };
 
 // Move tiles on the grid in the specified direction
-GameManager.prototype.move = function move(direction) {
+GameManager.prototype.move = function move(direction, record = true) {
   // 0: up, 1: right, 2: down, 3: left
   const self = this;
 
@@ -216,7 +216,11 @@ GameManager.prototype.move = function move(direction) {
 
   if (moved) {
     this.addRandomTile();
-    this.moves += 'urdl'[direction];
+
+    if (record) {
+      this.moveStore.append('urdl'[direction]);
+    }
+
     this.pushHistory();
 
     if (!this.movesAvailable()) {
@@ -349,7 +353,7 @@ GameManager.prototype.popHistory = function popHistory() {
 
   this.stateTransition(prevState, currState);
 
-  this.moves = this.moves.slice(0, this.history.length - 1);
+  this.moveStore.shorten(1);
 
   this.actuate();
 };
@@ -366,26 +370,31 @@ const longestCommonPrefix = (str1, str2) => {
 };
 
 GameManager.prototype.updateFromHash = function updateFromHash() {
-  const [gameSeed = '', moves = ''] = window.location.hash.slice(1).split(',');
+  const [gameSeed = '', moveString = ''] = window.location.hash.slice(1).split(',');
 
   if (gameSeed !== this.gameSeed) {
     this.gameSeed = gameSeed;
-    this.moves = moves;
+    this.moveStore.set(moveString);
 
     this.setup();
-  } else if (moves !== this.moves) {
-    const commonMoves = longestCommonPrefix(moves, this.moves);
-    const extraMoves = moves.slice(commonMoves.length);
+  } else if (moveString !== this.moveStore.get()) {
+    Promise.all([
+      this.moveStore.resolve(),
+      MoveStore(moveString).resolve(),
+    ]).then(([oldMoves, newMoves]) => {
+      const commonMoves = longestCommonPrefix(oldMoves, newMoves);
+      const extraMoves = newMoves.slice(commonMoves.length);
 
-    const prevState = this.getState();
-    this.history = this.history.slice(0, commonMoves.length + 1);
-    this.replaySequence(extraMoves);
+      const prevState = this.getState();
+      this.history = this.history.slice(0, commonMoves.length + 1);
+      this.replaySequence(extraMoves);
 
-    const currState = this.history[this.history.length - 1];
-    this.stateTransition(prevState, currState);
-    this.moves = moves;
+      const currState = this.history[this.history.length - 1];
+      this.stateTransition(prevState, currState);
+      this.moveStore.set(moveString);
 
-    this.actuate();
+      this.actuate();
+    });
   }
 };
 
