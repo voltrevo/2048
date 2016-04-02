@@ -84,7 +84,7 @@ Then, I suggest creating a url for those moves using a [github gist](https://gis
 
 **Note**: `<game-seed>` might be an empty string. That's ok.
 
-# Run your own instance
+# Run Your Own Instance
 
 ```sh
 git clone git@github.com:voltrevo/2048
