@@ -84,5 +84,17 @@ Then, I suggest creating a url for those moves using a [github gist](https://gis
 
 **Note**: `<game-seed>` might be an empty string. That's ok.
 
+# Run your own instance
+
+```sh
+git clone git@github.com:voltrevo/2048
+cd 2048
+npm install
+npm start
+# see localhost:8080
+```
+
+**Note**: You will need [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) and [node](https://nodejs.org/en/download/).
+
 ## License
 2048 is licensed under the [MIT license.](https://github.com/gabrielecirulli/2048/blob/master/LICENSE.txt)
