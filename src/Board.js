@@ -27,7 +27,7 @@ const padNum = (n, len) => {
   return repeatStr(' ', len - nStr.length) + nStr;
 };
 
-module.exports = (argInput) => {
+const Board = (argInput) => {
   // This is a workaround for browserify's parser and nodejs not supporting this type of argument
   // destructuring: ({ x = 1, y = 2 } = {}) => x + y;
   const arg = argInput || {};
@@ -162,6 +162,8 @@ module.exports = (argInput) => {
     insertRandomBlock()
   );
 
+  board.clone = () => Board({ gameSeed, cells });
+
   board.prettyString = () => {
     const maxLen = (Array.prototype.concat.apply([], cells)
       .map(n => String(n).length)
@@ -190,3 +192,5 @@ module.exports = (argInput) => {
 
   return board;
 };
+
+module.exports = Board;
