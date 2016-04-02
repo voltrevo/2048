@@ -1,6 +1,6 @@
 {
   "name": "voltrevo-2048",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A deterministic version of 2048.",
   "main": "index.js",
   "scripts": {
