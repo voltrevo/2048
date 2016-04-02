@@ -366,7 +366,7 @@ const longestCommonPrefix = (str1, str2) => {
 };
 
 GameManager.prototype.updateFromHash = function updateFromHash() {
-  const [gameSeed, moves] = window.location.hash.slice(1).split(',');
+  const [gameSeed = '', moves = ''] = window.location.hash.slice(1).split(',');
 
   if (gameSeed !== this.gameSeed) {
     this.gameSeed = gameSeed;
