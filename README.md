@@ -36,7 +36,7 @@ You can also experiment with this in the developer console as `window.Board`. Bo
 ```js
 Board({
   gameSeed: 'foobar',
-  inputCells: [
+  cells: [
     [0, 0, 0, 4],
     [0, 0, 2, 0],
     [0, 0, 0, 0],

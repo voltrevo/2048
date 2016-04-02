@@ -32,7 +32,7 @@ const Board = (argInput) => {
   // destructuring: ({ x = 1, y = 2 } = {}) => x + y;
   const arg = argInput || {};
   const gameSeed = arg.gameSeed || '';
-  const inputCells = arg.inputCells || range(4).map(() => [0, 0, 0, 0]);
+  const inputCells = arg.cells || range(4).map(() => [0, 0, 0, 0]);
 
   const board = {};
 
