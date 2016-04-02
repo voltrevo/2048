@@ -31,6 +31,20 @@ console.log(b.prettyString()); /*
 */
 ```
 
+You can also experiment with this in the developer console as `window.Board`. Boards also provide `.getCells()` and `.clone()`, and you can specify the game seed and starting state like this:
+
+```js
+Board({
+  gameSeed: 'foobar',
+  inputCells: [
+    [0, 0, 0, 4],
+    [0, 0, 2, 0],
+    [0, 0, 0, 0],
+    [0, 0, 4, 2],
+  ],
+})
+```
+
 # URL Hash Format
 If your move sequence becomes *very* long, it may become abbreviated using a fake url that is not shareable. The format looks like this:
 
