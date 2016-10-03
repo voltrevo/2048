@@ -69,6 +69,10 @@ KeyboardInputManager.prototype.listen = function listen() {
           self.emit('acceptSuggestion');
         }
       }
+    } else if (event.shiftKey) {
+      if (mapped === 5) {
+        self.emit('toggleRun');
+      }
     }
 
     // R key restarts the game

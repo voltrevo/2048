@@ -34,6 +34,7 @@ const GameManager = function GameManager({
   this.inputManager.on('keepPlaying', this.keepPlaying.bind(this));
   this.inputManager.on('undo', this.popHistory.bind(this));
   this.inputManager.on('acceptSuggestion', this.acceptSuggestion.bind(this));
+  this.inputManager.on('toggleRun', this.toggleRun.bind(this));
 
   this.moveStore.events.once('abbreviation', () => {
     document.querySelector('#dynamic-info-box').appendChild(
@@ -55,6 +56,7 @@ const GameManager = function GameManager({
   };
 
   this.setup();
+  this.canRun = true;
 };
 
 // Restart the game
@@ -440,6 +442,30 @@ GameManager.prototype.acceptSuggestion = function acceptSuggestion() {
 
 GameManager.prototype.getStateSeed = function getStateSeed() {
   return cellsToSeed(this.getPlainCells());
+};
+
+GameManager.prototype.toggleRun = function run() {
+  this.keepPlaying = true;
+
+  if (this.running === true) {
+    this.running = false;
+    return;
+  }
+
+  this.running = true;
+
+  const loop = () => {
+    if (!this.running) {
+      return;
+    }
+
+    setTimeout(() => {
+      this.acceptSuggestion();
+      requestAnimationFrame(loop);
+    });
+  };
+
+  requestAnimationFrame(loop);
 };
 
 module.exports = GameManager;
