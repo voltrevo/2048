@@ -44,7 +44,15 @@ const GameManager = function GameManager({
   window.addEventListener('hashchange', this.updateFromHash.bind(this));
 
   // If actuate is called many times quickly, it'll ignore all but the last call
-  this.actuate = onceLater(this.actuate.bind(this));
+  this.actuating = false;
+  const oldActuate = onceLater(this.actuate.bind(this));
+
+  this.actuate = () => {
+    this.actuating = true;
+    oldActuate().then(() => {
+      this.actuating = false;
+    });
+  };
 
   this.setup();
 };
@@ -412,12 +420,16 @@ GameManager.prototype.getPlainCells = function getPlainCells() {
 GameManager.prototype.createBoard = function createBoard() {
   return Board({
     gameSeed: this.gameSeed,
-    inputCells: this.getPlainCells(),
+    cells: this.getPlainCells(),
   });
 };
 
 GameManager.prototype.acceptSuggestion = function acceptSuggestion() {
   if (!this.getSuggestion) {
+    return;
+  }
+
+  if (this.actuating) {
     return;
   }
 
