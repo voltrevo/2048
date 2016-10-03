@@ -164,6 +164,15 @@ const Board = (argInput) => {
 
   board.clone = () => Board({ gameSeed, cells });
 
+  ['Left', 'Right', 'Up', 'Down'].forEach(direction => {
+    board[`clone${direction}`] = () => {
+      const newBoard = board.clone();
+      const success = newBoard[direction.toLowerCase()]();
+
+      return success ? newBoard : null;
+    };
+  });
+
   board.prettyString = () => {
     const maxLen = (Array.prototype.concat.apply([], cells)
       .map(n => String(n).length)
@@ -188,6 +197,20 @@ const Board = (argInput) => {
     result += horizBorder;
 
     return result;
+  };
+
+  board.isEqualTo = (otherBoard) => {
+    const otherCells = otherBoard.getCells();
+
+    for (let y = 0; y !== 4; y++) {
+      for (let x = 0; x !== 4; x++) {
+        if (cells[x][y] !== otherCells[x][y]) {
+          return false;
+        }
+      }
+    }
+
+    return true;
   };
 
   return board;
