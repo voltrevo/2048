@@ -35,7 +35,7 @@ test('race with contrived problem', t => {
       return {promise, cancel};
     };
 
-    solver.validate = msg => msg === 'valid solution';
+    solver.validate = (seeds, msg) => msg === 'valid solution';
 
     return solver;
   };
@@ -44,7 +44,11 @@ test('race with contrived problem', t => {
 
   Promise.all(pair.map(transport => race(transport, Solver())))
     .then(([aResult, bResult]) => {
-      t.equal(bResult, aResult === 'win' ? 'lose' : 'win');
+      t.equal(bResult, (
+        aResult === 'win' ? 'lose' :
+        aResult === 'draw' ? 'draw' :
+        'win'
+      ));
     })
     .catch(err => {
       t.fail(err.stack);

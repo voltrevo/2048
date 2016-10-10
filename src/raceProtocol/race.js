@@ -74,10 +74,10 @@ function negotiatePeriod({transportQueue, seeds}) {
 
   const roundTrips = [start];
 
-  // for (let i = 1; i !== 10; i++) {
-  //   const last = roundTrips[roundTrips.length - 1];
-  //   roundTrips.push(last.then(() => roundTrip(transportQueue)));
-  // }
+  for (let i = 1; i !== 10; i++) {
+    const last = roundTrips[roundTrips.length - 1];
+    roundTrips.push(last.then(() => roundTrip(transportQueue)));
+  }
 
   return Promise.all(roundTrips)
     .then(roundTripResults => {
@@ -129,10 +129,18 @@ function solutionPhase({solver, transportQueue, seeds, period}) {
     return next.then(msg => delay(period).then(() => msg));
   }
 
+  let salt = null;
+
+  function hashSolution() {
+    salt = sha256(String(Math.random()));
+    const rawHash = sha256(finished.solution);
+    return `${salt},${sha256(`${salt}${rawHash}`)}`;
+  }
+
   const loop = (msg) => {
     if (lastSent === 'not solved' && lastReceived === 'not solved') {
       lastReceived = msg;
-      lastSent = (finished ? 'solved' : 'not solved');
+      lastSent = (finished ? `solved:${hashSolution()}` : 'not solved');
       transportQueue.push(lastSent);
       return waitTurn().then(loop);
     }
@@ -141,25 +149,64 @@ function solutionPhase({solver, transportQueue, seeds, period}) {
       solveResult.cancel();
     }
 
-    if (lastSent === 'solved' && lastReceived === 'not solved') {
+    const currSolved = lastSent.slice(0, 7) === 'solved:';
+
+    const otherSolved = (
+      msg.slice(0, 7) === 'solved:' ||
+      lastReceived.slice(0, 7) === 'solved:'
+    );
+
+    let otherSolutionPromise = null;
+    let otherSolutionOk = null;
+
+    function checkOtherSolution(otherHash, otherSolution) {
+      const [otherSalt, otherHash2] = otherHash.split(',');
+
+      if (otherSalt === salt) {
+        throw new Error('Salt collision');
+      }
+
+      if (sha256(`${otherSalt}${sha256(otherSolution)}`) !== otherHash2) {
+        throw new Error(
+          `otherSolution hash check failed: ${JSON.stringify({otherHash, otherSolution}, null, 2)}`
+        );
+      }
+
+      if (!solver.validate(seeds, otherSolution)) {
+        throw new Error(`Rejected solution: ${JSON.stringify({otherSolution, seeds})}`);
+      }
+
+      return true;
+    }
+
+    if (otherSolved) {
+      const hashMsg = msg.slice(0, 7) === 'solved:' ? msg : lastReceived;
+      const otherHash = hashMsg.slice(7);
+
+      otherSolutionPromise = (
+        msg.slice(0, 7) === 'solved:' ?
+        transportQueue.pop() :
+        Promise.resolve(msg)
+      );
+
+      otherSolutionOk = otherSolutionPromise.then(otherSolution => checkOtherSolution(
+        otherHash,
+        otherSolution
+      ));
+    }
+
+    if (currSolved && !otherSolved) {
       transportQueue.push(finished.solution);
       return 'win';
     }
 
-    if (lastSent === 'not solved' && lastReceived === 'solved') {
-      if (!solver.validate(msg)) {
-        throw new Error(`Rejected solution: ${JSON.stringify({msg, seeds})}`);
-      }
-
-      return 'lose';
+    if (!currSolved && otherSolved) {
+      return otherSolutionOk.then(() => 'lose');
     }
 
-    if (lastSent === 'solved' && lastReceived === 'solved') {
-      if (!solver.validate(msg)) {
-        throw new Error(`Rejected solution: ${JSON.stringify({msg, seeds})}`);
-      }
-
-      return 'draw';
+    if (currSolved && otherSolved) {
+      transportQueue.push(finished.solution);
+      return otherSolutionOk.then(() => 'draw');
     }
 
     throw new Error('Shouldn\'t reach here');
