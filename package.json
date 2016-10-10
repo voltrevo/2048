@@ -37,6 +37,7 @@
     "lodash.memoize": "^4.0.2",
     "random-seed": "^0.3.0",
     "scssify": "^0.3.7",
+    "sha256": "^0.2.0",
     "voltrevo-event-emitter": "^1.1.2"
   },
   "devDependencies": {
