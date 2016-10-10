@@ -9,7 +9,7 @@ module.exports = () => {
 
   range(2).forEach(i => {
     const curr = pair[i];
-    const other = (i + 1) % 2;
+    const other = pair[(i + 1) % 2];
 
     curr.open = true;
 
