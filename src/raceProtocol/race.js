@@ -1,42 +1,24 @@
 'use strict';
 
+const EventEmitter = require('voltrevo-event-emitter');
 const sha256 = require('sha256');
 
-function nextMessage(transport) {
-  return new Promise((resolve, reject) => {
-    if (!transport.open) {
-      reject();
-      return;
-    }
-
-    transport.events.on('close', reject);
-
-    transport.events.once('message', msg => {
-      if (msg.slice(0, 6) === 'Error:') {
-        reject(new Error(msg.slice(6)));
-      } else {
-        resolve(msg);
-      }
-    });
-  });
-}
-
-function negotiateSeeds(transport) {
+function negotiateSeeds(transportQueue) {
   return Promise.resolve()
     .then(() => {
       const rand = sha256(String(Math.random()));
       const hashRand = sha256(rand);
 
-      transport.send(hashRand);
+      transportQueue.push(hashRand);
 
-      return nextMessage(transport)
+      return transportQueue.pop()
         .then(otherHashRand => ({otherHashRand, rand, hashRand}))
       ;
     })
     .then(({otherHashRand, rand}) => {
-      transport.send(rand);
+      transportQueue.push(rand);
 
-      return nextMessage(transport)
+      return transportQueue.pop()
         .then(otherRand => {
           if (sha256(otherRand) !== otherHashRand) {
             throw new Error(`sha256('${otherRand}') !== ${otherHashRand}`);
@@ -48,7 +30,7 @@ function negotiateSeeds(transport) {
     })
     .then(({otherRand, rand}) => {
       const coRand = sha256([otherRand, rand].sort().join(''));
-      return {transport, seeds: {coRand, otherRand, rand}};
+      return {coRand, otherRand, rand};
     })
   ;
 }
@@ -66,11 +48,11 @@ function hashRandToNum(hashRand) {
   return sum;
 }
 
-function roundTrip(transport) {
+function roundTrip(transportQueue) {
   const start = Date.now();
-  transport.send('');
+  transportQueue.push('');
 
-  return nextMessage(transport)
+  return transportQueue.pop()
     .then(() => Date.now() - start)
   ;
 }
@@ -82,25 +64,25 @@ function calculateFirst({coRand, otherRand, rand}) {
   return (coRandSmall ^ randSmall) === 1;
 }
 
-function negotiatePeriod({transport, seeds}) {
+function negotiatePeriod({transportQueue, seeds}) {
   const first = calculateFirst(seeds);
 
   const start = (first ?
-    roundTrip(transport) :
-    nextMessage(transport).then(roundTrip)
+    roundTrip(transportQueue) :
+    transportQueue.pop().then(() => roundTrip(transportQueue))
   );
 
   const roundTrips = [start];
 
-  for (let i = 1; i !== 10; i++) {
-    const last = roundTrips[roundTrips.length - 1];
-    roundTrips.push(last.then(() => roundTrip(transport)));
-  }
+  // for (let i = 1; i !== 10; i++) {
+  //   const last = roundTrips[roundTrips.length - 1];
+  //   roundTrips.push(last.then(() => roundTrip(transportQueue)));
+  // }
 
   return Promise.all(roundTrips)
     .then(roundTripResults => {
-      if (!first) {
-        transport.send('');
+      if (first) {
+        transportQueue.push();
       }
 
       const average = (
@@ -108,13 +90,13 @@ function negotiatePeriod({transport, seeds}) {
         roundTripResults.length
       );
 
-      transport.send(String(average));
+      transportQueue.push(String(average));
 
-      return nextMessage(transport)
+      return transportQueue.pop()
         .then((otherAverageStr) => {
           const otherAverage = Number(otherAverageStr);
           const period = 100 + 0.5 * (average + otherAverage);
-          return {transport, seeds, period};
+          return period;
         })
       ;
     })
@@ -125,7 +107,7 @@ function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function solutionPhase({solver, transport, seeds, period}) {
+function solutionPhase({solver, transportQueue, seeds, period}) {
   const first = calculateFirst(seeds);
   const solveResult = solver.solve(seeds);
 
@@ -140,8 +122,8 @@ function solutionPhase({solver, transport, seeds, period}) {
 
   function waitTurn() {
     const next = new Promise((resolve, reject) => {
-      nextMessage(transport).then(resolve);
-      delay(3 * period).then(reject);
+      transportQueue.pop().then(resolve);
+      delay(3 * period).then(() => reject(new Error('timeout')));
     });
 
     return next.then(msg => delay(period).then(() => msg));
@@ -151,12 +133,16 @@ function solutionPhase({solver, transport, seeds, period}) {
     if (lastSent === 'not solved' && lastReceived === 'not solved') {
       lastReceived = msg;
       lastSent = (finished ? 'solved' : 'not solved');
-      transport.send(lastSent);
+      transportQueue.push(lastSent);
       return waitTurn().then(loop);
     }
 
+    if (!finished) {
+      solveResult.cancel();
+    }
+
     if (lastSent === 'solved' && lastReceived === 'not solved') {
-      transport.send(finished.solution);
+      transportQueue.push(finished.solution);
       return 'win';
     }
 
@@ -180,10 +166,69 @@ function solutionPhase({solver, transport, seeds, period}) {
   };
 
   if (first) {
-    return delay(period).then(loop);
+    return delay(period).then(() => loop('not solved'));
   }
 
   return waitTurn().then(loop);
+}
+
+function AsyncQueue() {
+  const queue = {};
+
+  const dataBuf = [];
+  const promiseBuf = [];
+
+  function flush() {
+    while (dataBuf.length > 0 && promiseBuf.length > 0) {
+      promiseBuf.shift().resolve(dataBuf.shift());
+    }
+  }
+
+  queue.push = x => {
+    dataBuf.push(x);
+    flush();
+  };
+
+  queue.pop = () => new Promise((resolve, reject) => {
+    promiseBuf.push({resolve, reject});
+    flush();
+  });
+
+  queue.clear = () => {
+    while (promiseBuf.length > 0) {
+      promiseBuf.shift().reject(new Error('Queue ended'));
+    }
+
+    while (dataBuf.length > 0) {
+      dataBuf.shift();
+    }
+  };
+
+  return queue;
+}
+
+function TransportQueue(transport) {
+  const transportQueue = {};
+
+  const queue = AsyncQueue();
+
+  transport.events.on('message', msg => queue.push(msg));
+
+  transportQueue.pop = () => queue.pop();
+  transportQueue.push = msg => transport.send(msg);
+
+  transportQueue.events = EventEmitter();
+
+  transportQueue.log = transport.log;
+
+  transport.events.on('close', () => {
+    queue.clear();
+    transportQueue.events.emit('close');
+  });
+
+  transportQueue.close = transport.close;
+
+  return transportQueue;
 }
 
 // 1. Negotiate problem definition
@@ -201,13 +246,17 @@ function solutionPhase({solver, transport, seeds, period}) {
   // 'solved:hash' is followed by solution detail
   // Consecutive 'solved:hash' messages means a draw
   // Taking too long causes abort - possible manipulation
-module.exports = (transport, solver) => negotiateSeeds(transport)
-  .then(seeds => negotiatePeriod({transport, seeds})
-    .then(period => solutionPhase({solver, transport, seeds, period}))
-  )
-  .catch(err => {
-    transport.send(`Error: ${err.message}`);
-    transport.close();
-    throw err;
-  })
-;
+module.exports = (transport, solver) => {
+  const transportQueue = TransportQueue(transport);
+
+  return negotiateSeeds(transportQueue)
+    .then(seeds => negotiatePeriod({transportQueue, seeds})
+      .then(period => solutionPhase({solver, transportQueue, seeds, period}))
+    )
+    .catch(err => {
+      transportQueue.push(`Error: ${err.message}`);
+      transportQueue.close();
+      throw err;
+    })
+  ;
+};
