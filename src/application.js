@@ -7,6 +7,7 @@ require('./style/main.scss');
 
 const Container = require('./html/container.html');
 
+const editorGetSuggestion = require('./editorGetSuggestion.js');
 const GameManager = require('./game_manager.js');
 const KeyboardInputManager = require('./keyboard_input_manager.js');
 const LocalStorageManager = require('./local_storage_manager.js');
@@ -39,5 +40,6 @@ window.requestAnimationFrame(() => {
     InputManager: KeyboardInputManager,
     Actuator: HTMLActuator,
     StorageManager: LocalStorageManager,
+    getSuggestion: editorGetSuggestion(editor),
   });
 });

@@ -5,7 +5,6 @@ const Grid = require('./grid.js');
 const MoveStore = require('./MoveStore.js');
 const onceLater = require('./onceLater.js');
 const Tile = require('./tile.js');
-const editorGetSuggestion = require('./editorGetSuggestion.js');
 const rand = require('./rand.js');
 const stringToSeed = require('./stringToSeed.js');
 
@@ -16,7 +15,7 @@ const GameManager = function GameManager({
   InputManager,
   Actuator,
   StorageManager,
-  getSuggestion = editorGetSuggestion,
+  getSuggestion,
 }) {
   this.size = size; // Size of the grid
   this.gameSeed = gameSeed;
