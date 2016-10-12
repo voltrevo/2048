@@ -1,3 +1,8 @@
+const ace = require('brace');
+require('brace/theme/cobalt');
+require('brace/theme/solarized_dark');
+require('brace/mode/javascript');
+
 require('./style/main.scss');
 
 const Container = require('./html/container.html');
@@ -15,6 +20,17 @@ window.Board = require('./Board.js');
 // Wait till the browser is ready to render the game (avoids glitches)
 window.requestAnimationFrame(() => {
   document.body.appendChild(Container());
+
+  const editor = ace.edit('editor');
+  editor.getSession().setMode('ace/mode/javascript');
+  editor.setTheme('ace/theme/solarized_dark');
+
+  editor.setOptions({
+    tabSize: 2,
+    softTab: true,
+    printMargin: false,
+    displayIndentGuides: true,
+  });
 
   window.gameManager = new GameManager({
     size: 4,

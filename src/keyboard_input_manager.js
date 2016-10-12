@@ -52,7 +52,7 @@ KeyboardInputManager.prototype.listen = function listen() {
   };
 
   // Respond to direction keys
-  document.addEventListener('keydown', (event) => {
+  document.querySelector('#container-2048').addEventListener('keydown', (event) => {
     const modifiers = event.altKey || event.ctrlKey || event.metaKey ||
                     event.shiftKey;
     const mapped = map[event.which];
