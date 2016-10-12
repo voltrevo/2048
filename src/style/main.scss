@@ -142,6 +142,19 @@ hr {
 .container {
   width: $field-width;
   margin: 0 auto;
+  display: inline-block;
+  vertical-align: top;
+  height: 100vh;
+}
+
+.container-editor {
+  padding: 20px;
+  width: 50vw;
+}
+
+#editor {
+  background-color: orange;
+  height: 100vh;
 }
 
 @keyframes fade-in {
