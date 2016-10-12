@@ -435,8 +435,13 @@ GameManager.prototype.acceptSuggestion = function acceptSuggestion() {
   }
 
   const suggestion = this.getSuggestion(this.createBoard());
+  const moveIndex = ['up', 'right', 'down', 'left'].indexOf(suggestion);
 
-  this.move(['up', 'right', 'down', 'left'].indexOf(suggestion));
+  if (moveIndex !== -1) {
+    this.move(moveIndex);
+  } else {
+    this.actuate();
+  }
 };
 
 GameManager.prototype.getStateSeed = function getStateSeed() {

@@ -58,8 +58,7 @@ module.exports = (editor) => {
       lines[lines.length - 1].trim() !== '};'
     ) {
       // eslint-disable-next-line
-      console.warn('Suggestion function must start with \'(board) => {\' and end with \'};\'');
-      return 'right';
+      return 'Error: Suggestion function must start with \'(board) => {\' and end with \'};\'';
     }
 
     lines.shift();
@@ -72,8 +71,7 @@ module.exports = (editor) => {
       getSuggestion = new Function('board', lines.join('\n'));
     } catch (e) {
       // eslint-disable-next-line
-      console.error(e);
-      getSuggestion = () => 'right';
+      getSuggestion = () => e.stack;
     }
 
     return getSuggestion(board);
