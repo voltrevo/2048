@@ -54,6 +54,14 @@ const GameManager = function GameManager({
     });
   };
 
+  document.querySelector('.reload').addEventListener('click', () => {
+    this.actuator.updateSuggestion(
+      this.getSuggestion ?
+      this.getSuggestion(this.createBoard()) :
+      ''
+    );
+  });
+
   this.setup();
   this.canRun = true;
 };

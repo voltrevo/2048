@@ -152,6 +152,16 @@ hr {
   width: 50vw;
 }
 
+.reload {
+  border-radius: 5px;
+  padding: 5px;
+}
+
+.reload:hover {
+  background-color: #d8d6cd;
+  cursor: pointer;
+}
+
 #editor {
   height: 100vh;
 }
