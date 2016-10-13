@@ -1,3 +1,5 @@
+const EventEmitter = require('voltrevo-event-emitter');
+
 const AbbreviationWarning = require('./html/AbbreviationWarning.html');
 const Board = require('./Board.js');
 const cellsToSeed = require('./cellsToSeed.js');
@@ -7,6 +9,26 @@ const onceLater = require('./onceLater.js');
 const Tile = require('./tile.js');
 const rand = require('./rand.js');
 const stringToSeed = require('./stringToSeed.js');
+
+function incrementStartMoves(startMoves) {
+  let i = 0;
+
+  for (; i !== startMoves.length; i++) {
+    // eslint-disable-next-line
+    startMoves[i]++;
+
+    if (startMoves[i] !== 4) {
+      break;
+    }
+
+    // eslint-disable-next-line
+    startMoves[i] = 0;
+  }
+
+  if (i === startMoves.length) {
+    startMoves.push(0);
+  }
+}
 
 const GameManager = function GameManager({
   size,
@@ -25,6 +47,7 @@ const GameManager = function GameManager({
   this.getSuggestion = getSuggestion;
   this.moveStore = moveStore;
   this.history = [];
+  this.events = EventEmitter();
 
   this.startTiles = 2;
 
@@ -64,6 +87,43 @@ const GameManager = function GameManager({
 
   this.setup();
   this.canRun = true;
+
+  window.solver = (() => {
+    const solver = {};
+
+    solver.solve = ({coRand}) => new Promise((resolve, reject) => {
+      if (this.running) {
+        reject(new Error('Already running'));
+        return;
+      }
+
+      this.gameSeed = coRand;
+
+      this.restart();
+      this.toggleRun();
+
+      const startMoves = [];
+
+      const stuckListener = this.events.on('stuck', () => {
+        this.restart();
+        incrementStartMoves(startMoves);
+        startMoves.forEach(move => this.move(move));
+      });
+
+      const movedListener = this.events.on('moved', () => {
+        if ([].concat(...this.getPlainCells()).indexOf(256) !== -1) {
+          this.toggleRun();
+          this.moveStore.resolve().then(moves => {
+            movedListener.remove();
+            stuckListener.remove();
+            resolve(moves);
+          });
+        }
+      });
+    });
+
+    return solver;
+  })();
 };
 
 // Restart the game
@@ -247,11 +307,14 @@ GameManager.prototype.move = function move(direction, record = true) {
 
     this.pushHistory();
 
-    if (!this.movesAvailable()) {
+    if (!this.keepPlaying && !this.movesAvailable()) {
       this.over = true; // Game over!
     }
 
     this.actuate();
+    this.events.emit('moved');
+  } else {
+    this.events.emit('stuck');
   }
 };
 
@@ -449,6 +512,7 @@ GameManager.prototype.acceptSuggestion = function acceptSuggestion() {
     this.move(moveIndex);
   } else {
     this.actuate();
+    this.events.emit('stuck');
   }
 };
 
