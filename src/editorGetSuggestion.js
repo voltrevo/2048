@@ -23,23 +23,60 @@ function blockTrim(str) {
   ;
 }
 
+function cacheLast(fn) {
+  const cache = {input: {}};
+
+  return (input) => {
+    if (input === cache.input) {
+      return cache.output;
+    }
+
+    cache.input = input;
+    cache.output = fn(cache.input);
+
+    return cache.output;
+  };
+}
+
 module.exports = (editor) => {
-  editor.setValue(blockTrim(`
-    (board) => {
-      const movePriority = ['right', 'down', 'up', 'left'];
+  if (localStorage.getItem('getSuggestionCode') === null) {
+    localStorage.setItem('getSuggestionCode', blockTrim(`
+      (board) => {
+        const movePriority = ['right', 'down', 'up', 'left'];
 
-      for (let i = 0; i !== movePriority.length; i++) {
-        const move = movePriority[i];
+        for (let i = 0; i !== movePriority.length; i++) {
+          const move = movePriority[i];
 
-        if (board[move]()) {
-          return move;
+          if (board[move]()) {
+            return move;
+          }
         }
-      }
 
-      // Nowhere to go, but still need to return something
-      return 'right';
-    };
-  `));
+        // Nowhere to go, but still need to return something
+        return 'right';
+      };
+    `));
+  }
+
+  editor.setValue(localStorage.getItem('getSuggestionCode'));
+
+  editor.on('change', () => {
+    localStorage.setItem('getSuggestionCode', editor.getValue());
+  });
+
+  const getGetSuggestion = cacheLast((code) => {
+    let getSuggestion;
+
+    try {
+      // eslint-disable-next-line
+      getSuggestion = new Function('board', code);
+    } catch (e) {
+      // eslint-disable-next-line
+      getSuggestion = () => e.stack;
+    }
+
+    return getSuggestion;
+  });
 
   return (board) => {
     const lines = editor.getValue().split('\n');
@@ -64,15 +101,7 @@ module.exports = (editor) => {
     lines.shift();
     lines.pop();
 
-    let getSuggestion;
-
-    try {
-      // eslint-disable-next-line
-      getSuggestion = new Function('board', lines.join('\n'));
-    } catch (e) {
-      // eslint-disable-next-line
-      getSuggestion = () => e.stack;
-    }
+    const getSuggestion = getGetSuggestion(lines.join('\n'));
 
     return getSuggestion(board);
   };
