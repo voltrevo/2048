@@ -71,7 +71,6 @@ module.exports = (editor) => {
       // eslint-disable-next-line
       getSuggestion = new Function('board', code);
     } catch (e) {
-      // eslint-disable-next-line
       getSuggestion = () => e.stack;
     }
 
