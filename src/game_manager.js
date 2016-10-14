@@ -4,6 +4,7 @@ const AbbreviationWarning = require('./html/AbbreviationWarning.html');
 const Board = require('./Board.js');
 const cellsToSeed = require('./cellsToSeed.js');
 const Grid = require('./grid.js');
+const MeetTransport = require('./raceProtocol/MeetTransport.js');
 const MoveStore = require('./MoveStore.js');
 const onceLater = require('./onceLater.js');
 const Tile = require('./tile.js');
@@ -88,6 +89,38 @@ const GameManager = function GameManager({
   this.setup();
   this.canRun = true;
 
+  document.querySelector('#start-battle-button').addEventListener('click', () => {
+    this.startBattle();
+  });
+};
+
+GameManager.prototype.startBattle = function startBattle() {
+  const arena = document.querySelector('#arena-text').value;
+
+  const goalSelect = document.querySelector('#goal-select');
+  const goal = [256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536][goalSelect.selectedIndex];
+
+  const battleStatus = document.querySelector('#battle-status');
+
+  battleStatus.textContent = 'Connecting...';
+
+  MeetTransport(`${arena}-${goal}`)
+    .then(meetTransport => {
+      battleStatus.textContent = 'Connected, waiting for peer';
+
+      meetTransport.events.once('message', () => {
+        battleStatus.textContent = 'Got message from peer';
+      });
+
+      window.meetTransport = meetTransport;
+    })
+    .catch(err => {
+      battleStatus.textContent = err.stack;
+    })
+  ;
+};
+
+GameManager.prototype.Solver = function Solver() {
   window.solver = (() => {
     const solver = {};
 

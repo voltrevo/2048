@@ -1,5 +1,6 @@
 'use strict';
 
+const EventEmitter = require('voltrevo-event-emitter');
 const once = require('lodash/once');
 const sha256 = require('sha256');
 
@@ -23,7 +24,8 @@ module.exports = (id) => {
   return Promise
     .all([
       loadOpentok(),
-      fetch(`https://meet.tokbox.com/${hashId}`),
+      fetch(`https://opentok-meet.herokuapp.com/${hashId}`)
+        .then(res => res.json()),
     ])
     .then(([ot, {apiKey, sessionId, token}]) => new Promise((resolve, reject) => {
       const session = ot.initSession(apiKey, sessionId);
@@ -35,6 +37,8 @@ module.exports = (id) => {
 
         const transport = {};
 
+        transport.events = EventEmitter();
+
         let peerId = null;
 
         transport.send = msg => {
@@ -42,6 +46,10 @@ module.exports = (id) => {
         };
 
         session.on('signal', event => {
+          if (event.from.id === session.connection.id) {
+            return;
+          }
+
           if (peerId === null) {
             peerId = event.from.id;
           } else if (peerId !== event.from.id) {
