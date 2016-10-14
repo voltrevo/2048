@@ -16,10 +16,12 @@ function negotiateSeeds(transportQueue) {
       ;
     })
     .then(({otherHashRand, rand}) => {
+      console.log(`otherHashRand: ${otherHashRand}`);
       transportQueue.push(rand);
 
       return transportQueue.pop()
         .then(otherRand => {
+          console.log(`otherRand: ${otherRand}`);
           if (sha256(otherRand) !== otherHashRand) {
             throw new Error(`sha256('${otherRand}') !== ${otherHashRand}`);
           }
@@ -30,6 +32,7 @@ function negotiateSeeds(transportQueue) {
     })
     .then(({otherRand, rand}) => {
       const coRand = sha256([otherRand, rand].sort().join(''));
+      console.log(`Finished negotiateSeeds: ${coRand}`);
       return {coRand, otherRand, rand};
     })
   ;
@@ -67,6 +70,8 @@ function calculateFirst({coRand, otherRand, rand}) {
 function negotiatePeriod({transportQueue, seeds}) {
   const first = calculateFirst(seeds);
 
+  console.log(`Start negotiatePeriod, first: ${first}`);
+
   const start = (first ?
     roundTrip(transportQueue) :
     transportQueue.pop().then(() => roundTrip(transportQueue))
@@ -82,7 +87,7 @@ function negotiatePeriod({transportQueue, seeds}) {
   return Promise.all(roundTrips)
     .then(roundTripResults => {
       if (first) {
-        transportQueue.push();
+        transportQueue.push('');
       }
 
       const average = (
@@ -96,6 +101,7 @@ function negotiatePeriod({transportQueue, seeds}) {
         .then((otherAverageStr) => {
           const otherAverage = Number(otherAverageStr);
           const period = 100 + 0.5 * (average + otherAverage);
+          console.log(`negotiated period: ${period}`);
           return period;
         })
       ;
@@ -123,7 +129,7 @@ function solutionPhase({solver, transportQueue, seeds, period}) {
   function waitTurn() {
     const next = new Promise((resolve, reject) => {
       transportQueue.pop().then(resolve);
-      delay(3 * period).then(() => reject(new Error('timeout')));
+      delay(6 * period).then(() => reject(new Error(`timeout after ${6 * period}ms`)));
     });
 
     return next.then(msg => delay(period).then(() => msg));
@@ -301,7 +307,7 @@ module.exports = (transport, solver) => {
       .then(period => solutionPhase({solver, transportQueue, seeds, period}))
     )
     .catch(err => {
-      transportQueue.push(`Error: ${err.message}`);
+      transportQueue.push(`Error: ${err.stack}`);
       transportQueue.close();
       throw err;
     })

@@ -8,6 +8,7 @@ const MeetTransport = require('./raceProtocol/MeetTransport.js');
 const MoveStore = require('./MoveStore.js');
 const onceLater = require('./onceLater.js');
 const Tile = require('./tile.js');
+const race = require('./raceProtocol/race.js');
 const rand = require('./rand.js');
 const stringToSeed = require('./stringToSeed.js');
 
@@ -112,7 +113,23 @@ GameManager.prototype.startBattle = function startBattle() {
         battleStatus.textContent = 'Got message from peer';
       });
 
-      window.meetTransport = meetTransport;
+      const send = meetTransport.send;
+      meetTransport.send = msg => {
+        console.log('sending: ' + msg);
+        send(msg);
+      };
+
+      meetTransport.events.on('message', msg => console.log('received: ' + msg));
+
+      send('start');
+      meetTransport.events.once('message', msg => {
+        race(meetTransport, this.Solver(goal));
+
+        if (msg !== 'start') {
+          // FIXME: Find a less hacky way to do this
+          meetTransport.events.emit('message', msg);
+        }
+      });
     })
     .catch(err => {
       battleStatus.textContent = err.stack;
@@ -120,13 +137,13 @@ GameManager.prototype.startBattle = function startBattle() {
   ;
 };
 
-GameManager.prototype.Solver = function Solver() {
-  window.solver = (() => {
-    const solver = {};
+GameManager.prototype.Solver = function Solver(targetBlock) {
+  const solver = {};
 
-    const targetBlock = 256;
+  solver.solve = ({coRand}) => {
+    const result = {};
 
-    solver.solve = ({coRand}) => new Promise((resolve, reject) => {
+    result.promise = new Promise((resolve, reject) => {
       if (this.running) {
         reject(new Error('Already running'));
         return;
@@ -139,11 +156,23 @@ GameManager.prototype.Solver = function Solver() {
 
       const startMoves = [];
 
-      const stuckListener = this.events.on('stuck', () => {
+      let stuckListener;
+
+      const stuckHandler = () => {
+        stuckListener.remove();
+        this.running = false;
         this.restart();
+        this.keepPlaying = true;
         incrementStartMoves(startMoves);
         startMoves.forEach(move => this.move(move));
-      });
+
+        setTimeout(() => {
+          stuckListener = this.events.on('stuck', stuckHandler);
+          this.toggleRun();
+        }, 100);
+      };
+
+      stuckListener = this.events.on('stuck', stuckHandler);
 
       const movedListener = this.events.on('moved', () => {
         if ([].concat(...this.getPlainCells()).indexOf(targetBlock) !== -1) {
@@ -155,25 +184,33 @@ GameManager.prototype.Solver = function Solver() {
           });
         }
       });
+
+      result.cancel = () => {
+        this.toggleRun();
+        movedListener.remove();
+        stuckListener.remove();
+      };
     });
 
-    solver.validate = ({coRand}, solution) => {
-      const board = Board({gameSeed: coRand});
+    return result;
+  };
 
-      solution.split('').forEach(moveChar => {
-        board[{
-          l: 'left',
-          r: 'right',
-          u: 'up',
-          d: 'down',
-        }[moveChar]]();
-      });
+  solver.validate = ({coRand}, solution) => {
+    const board = Board({gameSeed: coRand});
 
-      return ([].concat(...board.getCells()).indexOf(targetBlock) !== -1);
-    };
+    solution.split('').forEach(moveChar => {
+      board[{
+        l: 'left',
+        r: 'right',
+        u: 'up',
+        d: 'down',
+      }[moveChar]]();
+    });
 
-    return solver;
-  })();
+    return ([].concat(...board.getCells()).indexOf(targetBlock) !== -1);
+  };
+
+  return solver;
 };
 
 // Restart the game

@@ -59,6 +59,8 @@ module.exports = (id) => {
           transport.events.emit('message', event.data);
         });
 
+        transport.close = () => session.disconnect();
+
         resolve(transport);
       });
     }))
