@@ -91,6 +91,8 @@ const GameManager = function GameManager({
   window.solver = (() => {
     const solver = {};
 
+    const targetBlock = 256;
+
     solver.solve = ({coRand}) => new Promise((resolve, reject) => {
       if (this.running) {
         reject(new Error('Already running'));
@@ -111,7 +113,7 @@ const GameManager = function GameManager({
       });
 
       const movedListener = this.events.on('moved', () => {
-        if ([].concat(...this.getPlainCells()).indexOf(256) !== -1) {
+        if ([].concat(...this.getPlainCells()).indexOf(targetBlock) !== -1) {
           this.toggleRun();
           this.moveStore.resolve().then(moves => {
             movedListener.remove();
@@ -121,6 +123,21 @@ const GameManager = function GameManager({
         }
       });
     });
+
+    solver.validate = ({coRand}, solution) => {
+      const board = Board({gameSeed: coRand});
+
+      solution.split('').forEach(moveChar => {
+        board[{
+          l: 'left',
+          r: 'right',
+          u: 'up',
+          d: 'down',
+        }[moveChar]]();
+      });
+
+      return ([].concat(...board.getCells()).indexOf(targetBlock) !== -1);
+    };
 
     return solver;
   })();
