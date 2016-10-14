@@ -41,7 +41,7 @@ function cacheLast(fn) {
 module.exports = (editor) => {
   if (localStorage.getItem('getSuggestionCode') === null) {
     localStorage.setItem('getSuggestionCode', blockTrim(`
-      (board) => {
+      return (board) => {
         const movePriority = ['right', 'down', 'up', 'left'];
 
         for (let i = 0; i !== movePriority.length; i++) {
@@ -69,38 +69,16 @@ module.exports = (editor) => {
 
     try {
       // eslint-disable-next-line
-      getSuggestion = new Function('board', code);
+      getSuggestion = new Function(code);
     } catch (e) {
-      getSuggestion = () => e.stack;
+      getSuggestion = () => () => e.stack;
     }
 
-    return getSuggestion;
+    return getSuggestion();
   });
 
   return (board) => {
-    const lines = editor.getValue().split('\n');
-
-    while (lines.length !== 0 && lines[0].trim() === '') {
-      lines.shift();
-    }
-
-    while (lines.length !== 0 && lines[lines.length - 1].trim() === '') {
-      lines.pop();
-    }
-
-    if (
-      lines.length === 0 ||
-      lines[0].trim() !== '(board) => {' ||
-      lines[lines.length - 1].trim() !== '};'
-    ) {
-      // eslint-disable-next-line
-      return 'Error: Suggestion function must start with \'(board) => {\' and end with \'};\'';
-    }
-
-    lines.shift();
-    lines.pop();
-
-    const getSuggestion = getGetSuggestion(lines.join('\n'));
+    const getSuggestion = getGetSuggestion(editor.getValue());
 
     return getSuggestion(board);
   };
