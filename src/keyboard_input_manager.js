@@ -53,7 +53,10 @@ KeyboardInputManager.prototype.listen = function listen() {
 
   // Respond to direction keys
   document.addEventListener('keydown', (event) => {
-    if (document.activeElement.parentElement === document.querySelector('#editor')) {
+    if (
+      document.activeElement.parentElement === document.querySelector('#editor') ||
+      document.activeElement === document.querySelector('#arena-text')
+    ) {
       return;
     }
 

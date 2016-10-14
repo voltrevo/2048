@@ -147,18 +147,28 @@ hr {
   height: 100vh;
 }
 
-.container-editor {
+#container-2048 {
   padding: 20px;
+}
+
+.container-editor {
   width: 50vw;
 }
 
-.reload {
+.container-float-editor {
+  position: fixed;
+  top: 0;
+  left: 0px;
+}
+
+.basic-button {
+  background-color: #d8d6cd;
   border-radius: 5px;
   padding: 5px;
 }
 
-.reload:hover {
-  background-color: #d8d6cd;
+.basic-button:hover {
+  background-color: #b6b4ab;
   cursor: pointer;
 }
 

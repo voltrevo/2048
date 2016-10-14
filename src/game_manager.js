@@ -77,7 +77,7 @@ const GameManager = function GameManager({
     });
   };
 
-  document.querySelector('.reload').addEventListener('click', () => {
+  document.querySelector('#reload').addEventListener('click', () => {
     this.actuator.updateSuggestion(
       this.getSuggestion ?
       this.getSuggestion(this.createBoard()) :

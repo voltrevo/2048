@@ -1,5 +1,7 @@
 <div>
   <div class="container container-editor">
+  </div>
+  <div class="container container-editor container-float-editor">
     <div id='editor'></div>
   </div>
   <div class="container" id='container-2048'>
@@ -16,11 +18,6 @@
     <div class="above-game">
       <p class="game-intro">Join the numbers and get to the <strong>2048 tile!</strong></p>
       <a class="restart-button">New Game</a>
-    </div>
-
-    <div id='dynamic-info-box'>
-      <hr>
-      <p><span class='reload'>↻</span> Suggestion: <span id='suggestion-text'></span></p>
     </div>
 
     <div class="game-container">
@@ -63,6 +60,34 @@
 
       </div>
     </div>
+
+    <div id='dynamic-info-box'>
+      <hr>
+      <p>
+        Suggestion:
+        <span id='suggestion-text'></span>
+        <span class='basic-button' id='reload'>↻</span>
+      </p>
+    </div>
+
+    <div id='battle-ui' style='padding-top: 20px;'>
+      Arena: <input type='text' id='arena-text'>
+      Goal: <select id='goal-select'>
+        <option>256</option>
+        <option>512</option>
+        <option>1024</option>
+        <option selected>2048</option>
+        <option>4096</option>
+        <option>8192</option>
+        <option>16384</option>
+        <option>32768</option>
+        <option>65536</option>
+      </select>
+      <span class='basic-button'>Start Battle</span>
+      <div id='status'></status>
+    </div>
+
+    <hr>
 
     <p class="game-explanation">
       <strong class="important">How to play:</strong> Use your <strong>arrow keys</strong> to move the tiles. When two tiles with the same number touch, they <strong>merge into one!</strong> Press <strong>backspace</strong> to undo and <strong>full stop</strong> to accept the suggested move.
