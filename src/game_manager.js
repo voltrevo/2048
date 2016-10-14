@@ -109,10 +109,6 @@ GameManager.prototype.startBattle = function startBattle() {
     .then(meetTransport => {
       battleStatus.textContent = 'Connected, waiting for peer';
 
-      meetTransport.events.once('message', () => {
-        battleStatus.textContent = 'Got message from peer';
-      });
-
       const send = meetTransport.send;
       meetTransport.send = msg => {
         console.log('sending: ' + msg);
@@ -121,15 +117,24 @@ GameManager.prototype.startBattle = function startBattle() {
 
       meetTransport.events.on('message', msg => console.log('received: ' + msg));
 
-      send('start');
-      meetTransport.events.once('message', msg => {
-        race(meetTransport, this.Solver(goal));
+      const outcomes = {
+        win: 0,
+        lose: 0,
+        draw: 0,
+      };
 
-        if (msg !== 'start') {
-          // FIXME: Find a less hacky way to do this
-          meetTransport.events.emit('message', msg);
-        }
-      });
+      const raceLoop = () => {
+        battleStatus.textContent = (
+          `Battling! W: ${outcomes.win}, L: ${outcomes.lose}, D: ${outcomes.draw}`
+        );
+
+        race(meetTransport, this.Solver(goal)).then(outcome => {
+          outcomes[outcome]++;
+          raceLoop();
+        });
+      };
+
+      raceLoop();
     })
     .catch(err => {
       battleStatus.textContent = err.stack;
@@ -164,11 +169,20 @@ GameManager.prototype.Solver = function Solver(targetBlock) {
         this.restart();
         this.keepPlaying = true;
         incrementStartMoves(startMoves);
-        startMoves.forEach(move => this.move(move));
 
-        setTimeout(() => {
-          stuckListener = this.events.on('stuck', stuckHandler);
-          this.toggleRun();
+        let i = 0;
+        const intervalId = setInterval(() => {
+          if (i === startMoves.length) {
+            clearInterval(intervalId);
+
+            stuckListener = this.events.once('stuck', stuckHandler);
+            this.toggleRun();
+
+            return;
+          }
+
+          this.move(startMoves[i]);
+          i++;
         }, 100);
       };
 
@@ -176,7 +190,7 @@ GameManager.prototype.Solver = function Solver(targetBlock) {
 
       const movedListener = this.events.on('moved', () => {
         if ([].concat(...this.getPlainCells()).indexOf(targetBlock) !== -1) {
-          this.toggleRun();
+          this.running = false;
           this.moveStore.resolve().then(moves => {
             movedListener.remove();
             stuckListener.remove();
@@ -186,7 +200,7 @@ GameManager.prototype.Solver = function Solver(targetBlock) {
       });
 
       result.cancel = () => {
-        this.toggleRun();
+        this.running = false;
         movedListener.remove();
         stuckListener.remove();
       };

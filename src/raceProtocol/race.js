@@ -265,7 +265,13 @@ function TransportQueue(transport) {
 
   const queue = AsyncQueue();
 
-  transport.events.on('message', msg => queue.push(msg));
+  transport.events.on('message', msg => {
+    if (msg === 'start') {
+      return;
+    }
+
+    queue.push(msg);
+  });
 
   transportQueue.pop = () => queue.pop();
   transportQueue.push = msg => transport.send(msg);
@@ -282,6 +288,27 @@ function TransportQueue(transport) {
   transportQueue.close = transport.close;
 
   return transportQueue;
+}
+
+function start(transport) {
+  return new Promise((resolve, reject) => {
+    transport.send('start');
+
+    const intervalId = setInterval(() => {
+      transport.send('start');
+    }, 200);
+
+    transport.events.once('message', msg => {
+      clearInterval(intervalId);
+      transport.send('start');
+
+      if (msg === 'start') {
+        resolve();
+      } else {
+        reject(new Error(`Expected 'start', received: ${msg}`));
+      }
+    });
+  });
 }
 
 // 1. Negotiate problem definition
@@ -302,7 +329,8 @@ function TransportQueue(transport) {
 module.exports = (transport, solver) => {
   const transportQueue = TransportQueue(transport);
 
-  return negotiateSeeds(transportQueue)
+  return start(transport)
+    .then(() => negotiateSeeds(transportQueue))
     .then(seeds => negotiatePeriod({transportQueue, seeds})
       .then(period => solutionPhase({solver, transportQueue, seeds, period}))
     )
