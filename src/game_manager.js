@@ -90,9 +90,9 @@ const GameManager = function GameManager({
   this.setup();
   this.canRun = true;
 
-  document.querySelector('#start-battle-button').addEventListener('click', () => {
-    this.startBattle();
-  });
+  // document.querySelector('#start-battle-button').addEventListener('click', () => {
+  //   this.startBattle();
+  // });
 };
 
 GameManager.prototype.startBattle = function startBattle() {
